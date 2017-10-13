@@ -8,6 +8,22 @@ static PVOID FileNameRedirectionByHandle(HMODULE h, LPCSTR redirectionName);
 static PVOID ChxGetProcAddressByName(HMODULE base, LPCSTR name);
 static PVOID ChxGetProcAddressByOrdinal(HMODULE base, WORD ordinal);
 
+FORCEINLINE
+PPEB WINAPI ChxGetPeb()
+{
+    ULONG_PTR pPeb;
+#ifdef _WIN64
+    pPeb = __readgsqword(0x60);
+#else
+#ifdef WIN_ARM
+    pPeb = *(DWORD *)((BYTE *)_MoveFromCoprocessor(15, 0, 13, 0, 2) + 0x30);
+#else _WIN32
+    pPeb = __readfsdword(0x30);
+#endif
+#endif
+    return (PPEB)pPeb;
+}
+
 PVOID WINAPI ChxGetProcessImageBase()
 {
     PPEB peb = ChxGetPeb();
