@@ -2,6 +2,7 @@
 
 #include "ntdll.h"
 #include "image.h"
+#include "process.h"
 
 //
 //  Declare ntdll.dll undocumented APIs
@@ -329,7 +330,42 @@ typedef struct _NTDLL {
     RtlUniform_t FpRtlUniform;
 } NTDLL;
 
-static NTDLL ntdll = { 0 };
+static NTDLL ntdll = {
+    NULL, // HMODULE h;
+    NULL, // NtClose_t FpNtClose;
+    NULL, // NtCreateFile_t FpNtCreateFile;
+    NULL, // NtOpenFile_t FpNtOpenFile;
+    NULL, // NtRenameKey_t FpNtRenameKey;
+    NULL, // NtNotifyChangeMultipleKeys_t FpNtNotifyChangeMultipleKeys;
+    NULL, // NtQueryMultipleValueKey_t FpNtQueryMultipleValueKey;
+    NULL, // NtSetInformationKey_t FpNtSetInformationKey;
+    NULL, // NtDeviceIoControlFile_t FpNtDeviceIoControlFile;
+    NULL, // NtWaitForSingleObject_t FpNtWaitForSingleObject;
+    NULL, // RtlIsNameLegalDOS8Dot3_t FpRtlIsNameLegalDOS8Dot3;
+    NULL, // RtlNtStatusToDosError_t FpRtlNtStatusToDosError;
+    NULL, // NtQueryInformationProcess_t FpNtQueryInformationProcess;
+    NULL, // NtQueryInformationThread_t FpNtQueryInformationThread;
+    NULL, // NtQueryObject_t FpNtQueryObject;
+    NULL, // NtQuerySystemInformation_t FpNtQuerySystemInformation;
+    NULL, // NtQuerySystemTime_t FpNtQuerySystemTime;
+    NULL, // RtlLocalTimeToSystemTime_t FpRtlLocalTimeToSystemTime;
+    NULL, // RtlTimeToSecondsSince1970_t FpRtlTimeToSecondsSince1970;
+    NULL, // RtlFreeAnsiString_t FpRtlFreeAnsiString;
+    NULL, // RtlFreeUnicodeString_t FpRtlFreeUnicodeString;
+    NULL, // RtlFreeOemString_t FpRtlFreeOemString;
+    NULL, // RtlInitString_t FpRtlInitString;
+    NULL, // RtlInitStringEx_t FpRtlInitStringEx;
+    NULL, // RtlInitAnsiString_t FpRtlInitAnsiString;
+    NULL, // RtlInitAnsiStringEx_t FpRtlInitAnsiStringEx;
+    NULL, // RtlInitUnicodeString_t FpRtlInitUnicodeString;
+    NULL, // RtlAnsiStringToUnicodeString_t FpRtlAnsiStringToUnicodeString;
+    NULL, // RtlUnicodeStringToAnsiString_t FpRtlUnicodeStringToAnsiString;
+    NULL, // RtlUnicodeStringToOemString_t FpRtlUnicodeStringToOemString;
+    NULL, // RtlUnicodeToMultiByteSize_t FpRtlUnicodeToMultiByteSize;
+    NULL, // RtlCharToInteger_t FpRtlCharToInteger;
+    NULL, // RtlConvertSidToUnicodeString_t FpRtlConvertSidToUnicodeString;
+    NULL, // RtlUniform_t FpRtlUniform;
+};
 
 NTSTATUS
 NTAPI
@@ -337,7 +373,7 @@ ChxNtdllInit(
     )
 {
     SecureZeroMemory(&ntdll, sizeof(ntdll));
-    ntdll.h = ChxGetModuleHandle(L"ntdll.dll");
+    ntdll.h = ChxGetProcessModuleHandle(L"ntdll.dll");
     if (NULL == ntdll.h)
         return STATUS_DLL_NOT_FOUND;
 

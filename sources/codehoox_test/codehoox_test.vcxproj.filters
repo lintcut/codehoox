@@ -33,9 +33,6 @@
     <ClCompile Include="..\apiset.c">
       <Filter>Source Files\codehoox</Filter>
     </ClCompile>
-    <ClCompile Include="..\codehoox.c">
-      <Filter>Source Files\codehoox</Filter>
-    </ClCompile>
     <ClCompile Include="..\disasm_x64.c">
       <Filter>Source Files\codehoox</Filter>
     </ClCompile>
@@ -49,6 +46,15 @@
       <Filter>Source Files\codehoox</Filter>
     </ClCompile>
     <ClCompile Include="..\strutil.c">
+      <Filter>Source Files\codehoox</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codehoox_x64.c">
+      <Filter>Source Files\codehoox</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codehoox_x86.c">
+      <Filter>Source Files\codehoox</Filter>
+    </ClCompile>
+    <ClCompile Include="tlstest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -72,6 +78,12 @@
       <Filter>Header Files\codehoox</Filter>
     </ClInclude>
     <ClInclude Include="..\strutil.h">
+      <Filter>Header Files\codehoox</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ntmacros.h">
+      <Filter>Header Files\codehoox</Filter>
+    </ClInclude>
+    <ClInclude Include="tlstest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

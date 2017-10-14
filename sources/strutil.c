@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Windows.h>
+#include "strutil.h"
 
 int ToLower(int c)
 {
     return (c >= 'A' && c <= 'Z') ? (c + 0x20) : c;
 }
 
-int CharCompare(int c1, int c2, BOOL caseInsensitive)
+int CharCompare(int c1, int c2, bool caseInsensitive)
 {
     if (caseInsensitive)
     {
@@ -39,7 +39,7 @@ unsigned int WcsLen(const wchar_t* s)
     return len;
 }
 
-int StrCompareN(const char* s1, const char* s2, unsigned int n, BOOL caseInsensitive)
+int StrCompareN(const char* s1, const char* s2, unsigned int n, bool caseInsensitive)
 {
     while ((*s1 || *s2) && n != 0)
     {
@@ -53,12 +53,12 @@ int StrCompareN(const char* s1, const char* s2, unsigned int n, BOOL caseInsensi
     return 0;
 }
 
-int StrCompare(const char* s1, const char* s2, BOOL caseInsensitive)
+int StrCompare(const char* s1, const char* s2, bool caseInsensitive)
 {
     return StrCompareN(s1, s2, 0xFFFFFFFF, caseInsensitive);
 }
 
-int WcsCompareN(const wchar_t* s1, const wchar_t* s2, unsigned int n, BOOL caseInsensitive)
+int WcsCompareN(const wchar_t* s1, const wchar_t* s2, unsigned int n, bool caseInsensitive)
 {
     while ((*s1 || *s2) && n != 0)
     {
@@ -72,7 +72,7 @@ int WcsCompareN(const wchar_t* s1, const wchar_t* s2, unsigned int n, BOOL caseI
     return 0;
 }
 
-int WcsCompare(const wchar_t* s1, const wchar_t* s2, BOOL caseInsensitive)
+int WcsCompare(const wchar_t* s1, const wchar_t* s2, bool caseInsensitive)
 {
     return WcsCompareN(s1, s2, 0xFFFFFFFF, caseInsensitive);
 }
@@ -161,4 +161,86 @@ unsigned int WcsNCpySafe(wchar_t* destination, unsigned int size, const wchar_t*
 unsigned int WcsCpySafe(wchar_t* destination, unsigned int size, const wchar_t* source)
 {
     return WcsNCpySafe(destination, size, source, 0xFFFFFFFF);
+}
+
+unsigned int StrToU(char const* s, const char** endPtr, int radix)
+{
+    unsigned int val = 0;
+    if (radix != 2 && radix != 10 && radix != 16)
+    {
+        if (endPtr)
+            *endPtr = s;
+        return 0;
+    }
+
+    while ('0' == *s)
+        ++s;
+
+    if (*s == 'x' || *s == 'X')
+    {
+        if (16 != radix)
+        {
+            if (endPtr)
+                *endPtr = s;
+            return 0;
+        }
+        ++s;
+    }
+
+    while (*s)
+    {
+        if (2 == radix)
+        {
+            if (*s == '0')
+            {
+                val <<= 1;
+            }
+            else if (*s == 1)
+            {
+                val <<= 1;
+                val |= 0x1;
+            }
+            else {
+                // Invalid
+                break;
+            }
+        }
+        else if (10 == radix)
+        {
+            if (*s < '0' || *s > '9')
+                break;
+            val *= 10;
+            val += (unsigned int)(*s - '0');
+        }
+        else if (16 == radix)
+        {
+            if (*s >= '0' && *s <= '9')
+            {
+                val <<= 4;
+                val += (unsigned int)(*s - '0');
+            }
+            else if (*s >= 'a' && *s <= 'f')
+            {
+                val <<= 4;
+                val += (unsigned int)(*s - 'a' + 10);
+            }
+            else if (*s >= 'A' && *s <= 'F')
+            {
+                val <<= 4;
+                val += (unsigned int)(*s - 'A' + 10);
+            }
+            else
+            {
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+        ++s;
+    }
+    if (endPtr)
+        *endPtr = s;
+    return val;
 }

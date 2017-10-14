@@ -42,6 +42,9 @@
     <ClInclude Include="strutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ntmacros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="disasm_x64.c">
@@ -65,13 +68,16 @@
     <ClCompile Include="apiset.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="codehoox.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="image.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="strutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="codehoox_x86.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="codehoox_x64.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

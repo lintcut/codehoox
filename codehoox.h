@@ -13,12 +13,13 @@ typedef struct _HOOXENTRY {
 
 typedef struct _HOOXENTRY* HOOXTABLE;
 
-int __stdcall ApplyHooks(HOOXTABLE hooks);
-
 int __stdcall HookStart();
-int __stdcall HookApi(const char* moduleName, const char* funcName,  void* newFunc, void** oldFunc);
-int __stdcall HookCode(void* address, void* newFunc, void** oldFunc);
-int __stdcall UnhookCode(void* origFunc, bool safe);
+int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCall);
+int __stdcall RemoveHook(void* trampolineCall);
+#ifdef _WIN32
+int __stdcall InstallComHook(void** vtblCallAddress, void* newCall);
+int __stdcall RemoveComHook(void** vtblCallAddress, void* oldCall);
+#endif
 int __stdcall HookFinalize();
 
 

@@ -9,26 +9,15 @@
 extern "C" {
 #endif
 
-// Get process environment block
-FORCEINLINE PPEB WINAPI ChxGetPeb();
-
-// Get process image base
-PVOID WINAPI ChxGetProcessImageBase();
-
-// Get module handle
-HMODULE WINAPI ChxGetModuleHandle(LPCWSTR wzModule);
-
-// Get module base name
-DWORD WINAPI ChxGetModuleBaseName(HMODULE h, LPWSTR wzBaseName, DWORD nSize);
-
-// Get module full name
-DWORD WINAPI ChxGetModuleFullPath(HMODULE h, LPWSTR wzFullPath, DWORD nSize);
-
 // Get procedure address
 PVOID WINAPI ChxGetProcAddress(HMODULE base, LPCSTR name);
 
-// Get ApisetMap address
-PVOID WINAPI ChxGetApisetMapAddress(PPEB pPeb);
+// Image help
+PIMAGE_DATA_DIRECTORY ChxGetImageDataDirectory(PVOID base, DWORD index);
+PIMAGE_EXPORT_DIRECTORY ChxGetImageExportDirectory(PVOID base, PDWORD pdwSize);
+DWORD* ChxGetImageExportFunctionAddressTable(PVOID base, PIMAGE_EXPORT_DIRECTORY exportDirectory);
+DWORD* ChxGetImageExportNameAddressTable(PVOID base, PIMAGE_EXPORT_DIRECTORY exportDirectory);
+WORD* ChxGetImageExportNameOrdinalTable(PVOID base, PIMAGE_EXPORT_DIRECTORY exportDirectory);
 
 #ifdef __cplusplus
 }

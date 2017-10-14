@@ -24,6 +24,7 @@
     <ClInclude Include="disasm.h" />
     <ClInclude Include="ntdll.h" />
     <ClInclude Include="image.h" />
+    <ClInclude Include="ntmacros.h" />
     <ClInclude Include="process.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="strutil.h" />
@@ -31,7 +32,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="apiset.c" />
-    <ClCompile Include="codehoox.c" />
+    <ClCompile Include="codehoox_x64.c" />
+    <ClCompile Include="codehoox_x86.c" />
     <ClCompile Include="disasm_x64.c" />
     <ClCompile Include="disasm_x86.c" />
     <ClCompile Include="ntdll.c" />

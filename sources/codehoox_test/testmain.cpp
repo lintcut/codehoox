@@ -2,9 +2,10 @@
 
 #include "ntdll.h"
 #include "image.h"
+#include "process.h"
 
 int main(int argc, char** argv)
 {
-    void* p = ChxGetProcAddress(ChxGetModuleHandle(L"kernel32.dll"), "GetThreadDescription");
+    void* p = ChxGetProcAddress(ChxGetProcessModuleHandle(L"kernel32.dll"), "GetThreadDescription");
     return 0;
 }
