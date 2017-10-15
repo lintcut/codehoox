@@ -183,6 +183,7 @@
     <ClCompile Include="..\process.c" />
     <ClCompile Include="..\strutil.c" />
     <ClCompile Include="..\thread.c" />
+    <ClCompile Include="hooktest.cpp" />
     <ClCompile Include="testmain.cpp" />
     <ClCompile Include="tlstest.cpp" />
   </ItemGroup>

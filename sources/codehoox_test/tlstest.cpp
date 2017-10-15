@@ -42,12 +42,14 @@ EXTERN_C const PIMAGE_TLS_CALLBACK p_tls_callback2 = tlsCallback2;
 #pragma const_seg(pop)
 #endif
 
+extern BOOL ApplyHook();
 
 static void __stdcall tlsCallback1(PVOID dllHandle, DWORD reason, PVOID reserved)
 {
     if (DLL_PROCESS_ATTACH == reason)
     {
         globalInitOnce();
+        ApplyHook();
     }
 }
 

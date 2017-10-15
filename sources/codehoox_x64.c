@@ -2,6 +2,7 @@
 
 #if defined(_WIN32) && defined(_WIN64)
 
+#error Not support 64 bit yet
 
 unsigned int GetCurrentInstructionLength(unsigned char* address)
 {

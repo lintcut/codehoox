@@ -9,6 +9,128 @@ static PVOID FileNameRedirectionByHandle(HMODULE h, LPCSTR redirectionName);
 static PVOID ChxGetProcAddressByName(HMODULE base, LPCSTR name);
 static PVOID ChxGetProcAddressByOrdinal(HMODULE base, WORD ordinal);
 
+PVOID WINAPI ChxGetProcAddress(HMODULE base, LPCSTR name)
+{
+    PVOID address = NULL;
+    DWORD Ordinal = (DWORD)((ULONG_PTR)name);
+    if (base)
+    {
+        if (HIWORD(Ordinal))
+        {
+            address = ChxGetProcAddressByName(base, name);
+        }
+        else
+        {
+            address = ChxGetProcAddressByOrdinal(base, LOWORD(Ordinal));
+        }
+    }
+    return address;
+}
+
+PIMAGE_NT_HEADERS ChxImageNtHeader(
+    PVOID baseAddress
+    )
+{
+    PIMAGE_NT_HEADERS ntHeader = NULL;
+    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)baseAddress;
+
+    if (dosHeader && dosHeader->e_magic == IMAGE_DOS_SIGNATURE)
+    {
+        ntHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)baseAddress + dosHeader->e_lfanew);
+
+        if (ntHeader->Signature == IMAGE_NT_SIGNATURE)
+            return ntHeader;
+    }
+
+    return NULL;
+}
+
+PVOID ChxImageDirectoryEntryToData(
+    PVOID baseAddress,
+    BOOLEAN mappedAsImage,
+    USHORT directory,
+    PULONG size
+    )
+{
+    PIMAGE_NT_HEADERS ntHeader;
+    ULONG va;
+
+    if ((ULONG_PTR)baseAddress & 1)
+    {
+        baseAddress = (PVOID)((ULONG_PTR)baseAddress & ~1);
+        mappedAsImage = FALSE;
+    }
+
+    ntHeader = ChxImageNtHeader(baseAddress);
+    if (ntHeader == NULL)
+        return NULL;
+
+    if (directory >= ntHeader->OptionalHeader.NumberOfRvaAndSizes)
+        return NULL;
+
+    va = ntHeader->OptionalHeader.DataDirectory[directory].VirtualAddress;
+    if (va == 0)
+        return NULL;
+
+    *size = ntHeader->OptionalHeader.DataDirectory[directory].Size;
+
+    if (mappedAsImage || va < ntHeader->OptionalHeader.SizeOfHeaders)
+        return (PVOID)((ULONG_PTR)baseAddress + va);
+
+    return ChxImageRvaToVa(ntHeader, baseAddress, va, NULL);
+}
+
+PIMAGE_SECTION_HEADER ChxImageRvaToSection(
+    PIMAGE_NT_HEADERS ntHeader,
+    PVOID baseAddress,
+    ULONG rva
+    )
+{
+    PIMAGE_SECTION_HEADER section;
+    ULONG va;
+    ULONG count;
+
+    count = ntHeader->FileHeader.NumberOfSections;
+    section = (PIMAGE_SECTION_HEADER)((ULONG_PTR)&ntHeader->OptionalHeader + ntHeader->FileHeader.SizeOfOptionalHeader);
+
+    while (count)
+    {
+        va = section->VirtualAddress;
+        if ((va <= rva) &&
+            (rva < va + section->SizeOfRawData))
+            return section;
+        section++;
+    }
+    return NULL;
+}
+
+PVOID ChxImageRvaToVa(
+    PIMAGE_NT_HEADERS ntHeader,
+    PVOID baseAddress,
+    ULONG rva,
+    PIMAGE_SECTION_HEADER *sectionHeader
+    )
+{
+    PIMAGE_SECTION_HEADER section = NULL;
+
+    if (sectionHeader)
+        section = *sectionHeader;
+
+    if (section == NULL ||
+        rva < section->VirtualAddress ||
+        rva >= section->VirtualAddress + section->SizeOfRawData)
+    {
+        section = ChxImageRvaToSection(ntHeader, baseAddress, rva);
+
+        if (section == NULL)
+            return 0;
+
+        if (sectionHeader)
+            *sectionHeader = section;
+    }
+
+    return (PVOID)((ULONG_PTR)baseAddress + rva + section->PointerToRawData - (ULONG_PTR)section->VirtualAddress);
+}
 
 PIMAGE_DATA_DIRECTORY ChxGetImageDataDirectory(PVOID base, DWORD index)
 {
@@ -154,23 +276,5 @@ static PVOID ChxGetProcAddressByOrdinal(HMODULE base, WORD ordinal)
     if ((ULONG_PTR)address >= (ULONG_PTR)exportTable && ((ULONG_PTR)address < ((ULONG_PTR)exportTable + exportSize)))
         address = FileNameRedirectionByHandle(base, (const char*)address);
 
-    return address;
-}
-
-PVOID WINAPI ChxGetProcAddress(HMODULE base, LPCSTR name)
-{
-    PVOID address = NULL;
-    DWORD Ordinal = (DWORD)((ULONG_PTR)name);
-    if (base)
-    {
-        if (HIWORD(Ordinal))
-        {
-            address = ChxGetProcAddressByName(base, name);
-        }
-        else
-        {
-            address = ChxGetProcAddressByOrdinal(base, LOWORD(Ordinal));
-        }
-    }
     return address;
 }

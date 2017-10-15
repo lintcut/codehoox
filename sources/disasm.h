@@ -25,6 +25,7 @@ unsigned int GetCurrentInstructionLength(unsigned char* address);
 //    - dest: target buffer to hold copied instructions
 // Return:
 //    - the length of copied instructions, in bytes
+//      it should be >= requested length if succeed
 unsigned int BackupInstructions(unsigned char* src, unsigned int length, unsigned char* dest);
 
 #ifdef __cplusplus

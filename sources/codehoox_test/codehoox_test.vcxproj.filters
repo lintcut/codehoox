@@ -57,6 +57,9 @@
     <ClCompile Include="tlstest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hooktest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ntdll.h">

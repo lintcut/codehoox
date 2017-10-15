@@ -12,6 +12,30 @@ extern "C" {
 // Get procedure address
 PVOID WINAPI ChxGetProcAddress(HMODULE base, LPCSTR name);
 
+PIMAGE_NT_HEADERS ChxImageNtHeader(
+    PVOID baseAddress
+    );
+
+PVOID ChxImageDirectoryEntryToData(
+    PVOID baseAddress,
+    BOOLEAN mappedAsImage,
+    USHORT directory,
+    PULONG size
+    );
+
+PIMAGE_SECTION_HEADER ChxImageRvaToSection(
+    PIMAGE_NT_HEADERS ntHeader,
+    PVOID baseAddress,
+    ULONG rva
+    );
+
+PVOID ChxImageRvaToVa(
+    PIMAGE_NT_HEADERS ntHeader,
+    PVOID baseAddress,
+    ULONG rva,
+    PIMAGE_SECTION_HEADER *sectionHeader
+    );
+
 // Image help
 PIMAGE_DATA_DIRECTORY ChxGetImageDataDirectory(PVOID base, DWORD index);
 PIMAGE_EXPORT_DIRECTORY ChxGetImageExportDirectory(PVOID base, PDWORD pdwSize);
