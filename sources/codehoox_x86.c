@@ -90,7 +90,7 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
             break;
         }
 
-        // copy detour jmp
+        // Copy detour jmp
         __try
         {
             // build detour jmp
@@ -102,7 +102,7 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
                 break;
             }
 
-            // Overwrite original ca;;'s first several bytes with JMP
+            // Overwrite original call's first 5 bytes with JMP
             memcpy(originalCall, detourJmp, max(5, bytesToSave));
 
             if (!VirtualProtect(originalCall, bytesToSave, originalPageRights, &originalPageRights))
@@ -136,12 +136,69 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
 
 int __stdcall InspectHook(void* trampolineCall)
 {
-    return 0;
+    BOOL bRet = TRUE;
+    PDETOUR_CALL_INFO pDetourInfo = NULL;
+
+    do
+    {
+        pDetourInfo = (PDETOUR_CALL_INFO)((PBYTE)trampolineCall + DETOUR_CALL_INFO_OFFSET);
+
+        __try
+        {
+            // The JMP instruction disappear?
+            if (*((BYTE*)pDetourInfo->originalCallAddress) != 0xEB)
+                break;
+
+            bRet = TRUE;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+        }
+
+    } while (FALSE);
+
+    return bRet;
 }
 
 int __stdcall RemoveHook(void* trampolineCall)
 {
-    return 0;
+    BOOL bRet = TRUE;
+    PDETOUR_CALL_INFO pDetourInfo = NULL;
+    DWORD originalPageRights;
+
+    do
+    {
+        pDetourInfo = (PDETOUR_CALL_INFO)((PBYTE)trampolineCall + DETOUR_CALL_INFO_OFFSET);
+
+        __try
+        {
+            if (!VirtualProtect(pDetourInfo->originalCallAddress, pDetourInfo->bytesCopied, PAGE_EXECUTE_READWRITE, &originalPageRights))
+            {
+                bRet = FALSE;
+                break;
+            }
+
+            // Recover original call's start instructions
+            memcpy(pDetourInfo->originalCallAddress, pDetourInfo->originalInstructions, pDetourInfo->bytesCopied);
+
+            if (!VirtualProtect(pDetourInfo->originalCallAddress, pDetourInfo->bytesCopied, originalPageRights, &originalPageRights))
+            {
+                bRet = FALSE;
+                break;
+            }
+
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            bRet = FALSE;
+        }
+
+        // Free trampoline thrunk
+        cleanupTrampolineCall((TRAMPOLINE_PROC*)trampolineCall);
+
+    } while (FALSE);
+
+    return bRet;
 }
 
 int __stdcall InstallComHook(void** vtblCallAddress, void* newCall)
@@ -174,21 +231,22 @@ static BOOL inspectOriginalCall(PVOID originalCall)
 
 static TRAMPOLINE_PROC* initTrampolineCall(PVOID originalCall)
 {
-    TRAMPOLINE_PROC *pfntrampolineCall = NULL;
+    TRAMPOLINE_PROC *pfnTrampolineCall = NULL;
 
     do
     {
-        pfntrampolineCall = (TRAMPOLINE_PROC*)VirtualAlloc(NULL, sizeof(TRAMPOLINE_PROC), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        if (!pfntrampolineCall)
+        pfnTrampolineCall = (TRAMPOLINE_PROC*)VirtualAlloc(NULL, sizeof(TRAMPOLINE_PROC), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        if (!pfnTrampolineCall)
         {
             break;
         }
 
-        memset(pfntrampolineCall, 0x90, sizeof(TRAMPOLINE_PROC));
+        // Fill it with NOP
+        memset(pfnTrampolineCall, 0x90, sizeof(TRAMPOLINE_PROC));
 
     } while (FALSE);
 
-    return pfntrampolineCall;
+    return pfnTrampolineCall;
 }
 
 static void cleanupTrampolineCall(TRAMPOLINE_PROC* trampolineCall)
@@ -199,7 +257,7 @@ static void cleanupTrampolineCall(TRAMPOLINE_PROC* trampolineCall)
 static BOOL buildTrampolineCallFromOriginal(PVOID originalCall, PVOID trampolineCall, DWORD bytesToSave)
 {
     BOOL bRet = TRUE;
-    BYTE trampolineJmp[5] = { 0xe9,0x00,0x00,0x00,0x00 };
+    BYTE trampolineJmp[5] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
     PDETOUR_CALL_INFO pDetourInfo = NULL;
     DWORD originalPageRights;
 
@@ -210,19 +268,23 @@ static BOOL buildTrampolineCallFromOriginal(PVOID originalCall, PVOID trampoline
 
         __try
         {
-            // setup trampoline jmp
+            // Setup trampoline jmp
             *(DWORD*)(trampolineJmp + 1) = (DWORD)((BYTE*)originalCall - ((BYTE*)trampolineCall + 5));
 
+            // Backup fierst several bytes which is covered by our JMP instructions
+            // And double check, make sure the bytes to copied is correct
+            // Now: trampoline start with first several bytes from original call
             if (bytesToSave != BackupInstructions((PBYTE)originalCall, bytesToSave, (PBYTE)trampolineCall))
             {
                 bRet = FALSE;
                 break;
             }
 
-            // copy trampoline jmp
+            // Copy trampoline jmp
+            // After the bytes from original call, there is a JMP back to original call (skip backed up bytes)
             memcpy((BYTE*)(trampolineCall) + bytesToSave, trampolineJmp, sizeof(trampolineJmp));
 
-            // fill out detour info
+            // Fill out detour info
             pDetourInfo->originalCallAddress = originalCall;
             memcpy(pDetourInfo->originalInstructions, (BYTE*)originalCall, bytesToSave);
             pDetourInfo->bytesCopied = bytesToSave;
