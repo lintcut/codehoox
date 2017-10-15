@@ -43,6 +43,9 @@ EXTERN_C const PIMAGE_TLS_CALLBACK p_tls_callback2 = tlsCallback2;
 #endif
 
 extern BOOL ApplyHook();
+extern void ClearHook();
+
+#define NOTHING
 
 static void __stdcall tlsCallback1(PVOID dllHandle, DWORD reason, PVOID reserved)
 {
@@ -55,8 +58,9 @@ static void __stdcall tlsCallback1(PVOID dllHandle, DWORD reason, PVOID reserved
 
 static void __stdcall tlsCallback2(PVOID dllHandle, DWORD reason, PVOID reserved)
 {
-    if (DLL_PROCESS_ATTACH == reason)
+    if (DLL_PROCESS_DETACH == reason)
     {
+        ClearHook();
     }
 }
 

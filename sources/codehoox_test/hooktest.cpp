@@ -34,6 +34,12 @@ BOOL ApplyHook()
     return TRUE;
 }
 
+void ClearHook()
+{
+    RemoveHook(trampolineCreateFileW);
+    trampolineCreateFileW = NULL;;
+}
+
 BOOL TestHook()
 {
     HANDLE h = CreateFileW(L"C:\\workspace\\temp\\test1.txt", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
