@@ -12,6 +12,13 @@ typedef uint32_t INT;
 
 
 //
+//  Macro Does Nothing
+//
+#ifndef NOTHING
+#define NOTHING
+#endif
+
+//
 //  These macros are used to test, set and clear flags respectivly
 //
 #ifndef FlagOn

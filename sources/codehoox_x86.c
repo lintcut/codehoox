@@ -9,7 +9,7 @@ const unsigned char DETOUR_JMP_INDICATOR = 0x58; // 'X'
 
 #define TRAMPOLINE_PROC_SIZE	80
 #define TRAMPOLINE_JMP_SIZE	    5
-#define DETOUR_JMP_SIZE	        6       // JMP Instruction (5 bytes) and Indicator (1 byte)
+#define DETOUR_JMP_SIZE	        6       // JMP Instruction (5 bytes) plus Indicator (1 byte)
 
 typedef struct _TRAMPOLINE_PROC {
     BYTE nop[TRAMPOLINE_PROC_SIZE];

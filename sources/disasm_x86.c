@@ -827,7 +827,7 @@ static PBYTE CopyBytes(PX86DISASM_INFO pInfo, REFCOPYENTRY pEntry, PBYTE pbDst, 
     return pbSrc + nBytes;
 }
 
-static PBYTE CopyBytesPrefix(PX86DISASM_INFO	pInfo, REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
+static PBYTE CopyBytesPrefix(PX86DISASM_INFO pInfo, REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
     CopyBytes(pInfo, pEntry, pbDst, pbSrc);
     pEntry = &InstructionCopyTable[pbSrc[1]];
@@ -847,11 +847,11 @@ static PBYTE CopyBytesRax(PX86DISASM_INFO pInfo, REFCOPYENTRY pEntry, PBYTE pbDs
 
 static PBYTE AdjustTarget(
     PX86DISASM_INFO pInfo,
-    PBYTE			pbDst,
-    PBYTE			pbSrc,
-    LONG			cbOp,
-    LONG			cbTargetOffset,
-    LONG			cbTargetSize)
+    PBYTE pbDst,
+    PBYTE pbSrc,
+    LONG cbOp,
+    LONG cbTargetOffset,
+    LONG cbTargetSize)
 {
     PBYTE pbTarget = NULL;
     PVOID pvTargetAddr = &pbDst[cbTargetOffset];

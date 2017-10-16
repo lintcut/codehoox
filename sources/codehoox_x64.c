@@ -1,5 +1,6 @@
 #include "disasm.h"
 
+// Indicator is defined in codehoox_x86.c
 extern const unsigned char DETOUR_JMP_INDICATOR;
 
 #if defined(_WIN32) && defined(_WIN64)
