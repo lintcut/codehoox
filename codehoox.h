@@ -15,7 +15,8 @@ typedef struct _HOOXENTRY* HOOXTABLE;
 
 int __stdcall HookStart();
 int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCall);
-int __stdcall InspectHook(void* trampolineCall);
+bool __stdcall HookedByCodeHoox(void* originalCall);
+bool __stdcall IsCodeHooxTrampoline(void* trampolineCall);
 int __stdcall RemoveHook(void* trampolineCall);
 #ifdef _WIN32
 int __stdcall InstallComHook(void** vtblCallAddress, void* newCall);

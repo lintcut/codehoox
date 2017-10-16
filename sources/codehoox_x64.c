@@ -1,5 +1,7 @@
 #include "disasm.h"
 
+extern const unsigned char DETOUR_JMP_INDICATOR;
+
 #if defined(_WIN32) && defined(_WIN64)
 
 #error Not support 64 bit yet

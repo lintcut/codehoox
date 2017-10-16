@@ -1,5 +1,6 @@
 
 #include <Windows.h>
+#include <assert.h>
 #include "codehoox.h"
 #include "strutil.h"
 
@@ -30,6 +31,9 @@ BOOL ApplyHook()
 {
     if (!InstallHook(CreateFileW, MyCreateFileW, (void**)&trampolineCreateFileW))
         return FALSE;
+
+    assert(HookedByCodeHoox(CreateFileW));
+    assert(IsCodeHooxTrampoline(trampolineCreateFileW));
 
     return TRUE;
 }

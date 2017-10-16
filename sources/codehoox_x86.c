@@ -1,10 +1,15 @@
 #include "disasm.h"
+#include "ntmacros.h"
+
+const unsigned char DETOUR_JMP_INDICATOR = 0x58; // 'X'
 
 #if defined(_WIN32) && !defined(_WIN64)
 #include <Windows.h>
+#include <cstdbool>
 
 #define TRAMPOLINE_PROC_SIZE	80
 #define TRAMPOLINE_JMP_SIZE	    5
+#define DETOUR_JMP_SIZE	        6       // JMP Instruction (5 bytes) and Indicator (1 byte)
 
 typedef struct _TRAMPOLINE_PROC {
     BYTE nop[TRAMPOLINE_PROC_SIZE];
@@ -41,11 +46,12 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
     BYTE firstInstruction;
 
     // 20 bytes should be enough
+    // Also, put a Flag after JMP instruction
     BYTE detourJmp[20] = {
-        0xE9, 0x00, 0x00, 0x00, 0x00,   // JMP XXXX
-        0x90, 0x90, 0x90, 0x90, 0x90,
-        0x90, 0x90, 0x90, 0x90, 0x90,
-        0x90, 0x90, 0x90, 0x90, 0x90
+        0xE9, 0x00, 0x00, 0x00, 0x00,   // JMP  XX  XX  XX  XX
+        DETOUR_JMP_INDICATOR, 0x90, 0x90, 0x90, 0x90,   // Indicator  NOP NOP NOP NOP
+        0x90, 0x90, 0x90, 0x90, 0x90,   // NOP  NOP NOP NOP NOP
+        0x90, 0x90, 0x90, 0x90, 0x90    // NOP  NOP NOP NOP NOP
     };
 
     do
@@ -82,7 +88,7 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
         do
         {
             bytesToSave += GetCurrentInstructionLength((PBYTE)originalCall + bytesToSave);
-        } while (bytesToSave < TRAMPOLINE_JMP_SIZE);
+        } while (bytesToSave < DETOUR_JMP_SIZE);
 
         if (!buildTrampolineCallFromOriginal(originalCall, pfnTrampoline, bytesToSave))
         {
@@ -102,8 +108,8 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
                 break;
             }
 
-            // Overwrite original call's first 5 bytes with JMP
-            memcpy(originalCall, detourJmp, max(5, bytesToSave));
+            // Overwrite original call's first DETOUR_JMP_SIZE bytes with JMP & Indicator
+            memcpy(originalCall, detourJmp, max(DETOUR_JMP_SIZE, bytesToSave));
 
             if (!VirtualProtect(originalCall, bytesToSave, originalPageRights, &originalPageRights))
             {
@@ -134,28 +140,55 @@ int __stdcall InstallHook(void* originalCall, void* newCall, void** trampolineCa
     return bRet;
 }
 
-int __stdcall InspectHook(void* trampolineCall)
+bool __stdcall HookedByCodeHoox(void* originalCall)
 {
-    BOOL bRet = TRUE;
-    PDETOUR_CALL_INFO pDetourInfo = NULL;
+    bool bRet = false;
 
     do
     {
-        pDetourInfo = (PDETOUR_CALL_INFO)((PBYTE)trampolineCall + DETOUR_CALL_INFO_OFFSET);
-
         __try
         {
-            // The JMP instruction disappear?
-            if (*((BYTE*)pDetourInfo->originalCallAddress) != 0xEB)
+            // Not beging with JMP instruction?
+            if (*((BYTE*)originalCall) != 0xE9)
                 break;
 
-            bRet = TRUE;
+            // Not end with Indicator?
+            if (*((BYTE*)originalCall + 5) != DETOUR_JMP_INDICATOR)
+                break;
+
+            bRet = true;
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
         }
 
-    } while (FALSE);
+    } while (false);
+
+    return bRet;
+}
+
+bool __stdcall IsCodeHooxTrampoline(void* trampolineCall)
+{
+    bool bRet = false;
+
+    do
+    {
+        PDETOUR_CALL_INFO pDetourInfo = (PDETOUR_CALL_INFO)Add2Ptr(trampolineCall, DETOUR_CALL_INFO_OFFSET);
+
+        __try
+        {
+            PVOID trampolineJmp = Add2Ptr(trampolineCall, pDetourInfo->bytesCopied);
+            // Validate trampoline JMP address
+            if (Ptr2Value(Add2Ptr(trampolineJmp, 1), DWORD) != PtrOffset(Add2Ptr(trampolineCall, 5), pDetourInfo->originalCallAddress))
+                break;
+
+            bRet = true;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+        }
+
+    } while (false);
 
     return bRet;
 }
@@ -163,15 +196,15 @@ int __stdcall InspectHook(void* trampolineCall)
 int __stdcall RemoveHook(void* trampolineCall)
 {
     BOOL bRet = TRUE;
-    PDETOUR_CALL_INFO pDetourInfo = NULL;
-    DWORD originalPageRights;
 
     do
     {
-        pDetourInfo = (PDETOUR_CALL_INFO)((PBYTE)trampolineCall + DETOUR_CALL_INFO_OFFSET);
+        PDETOUR_CALL_INFO pDetourInfo = (PDETOUR_CALL_INFO)Add2Ptr(trampolineCall, DETOUR_CALL_INFO_OFFSET);
 
         __try
         {
+            DWORD originalPageRights = 0;
+
             if (!VirtualProtect(pDetourInfo->originalCallAddress, pDetourInfo->bytesCopied, PAGE_EXECUTE_READWRITE, &originalPageRights))
             {
                 bRet = FALSE;
@@ -219,7 +252,7 @@ int __stdcall HookFinalize()
 static BOOL inspectOriginalCall(PVOID originalCall)
 {
     BOOL bRet = TRUE;
-    const BYTE	expectedInstruction[5] = { 0x00,0x00,0x00,0x00,0x00 };
+    const BYTE	expectedInstruction[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     do
     {
@@ -257,19 +290,19 @@ static void cleanupTrampolineCall(TRAMPOLINE_PROC* trampolineCall)
 static BOOL buildTrampolineCallFromOriginal(PVOID originalCall, PVOID trampolineCall, DWORD bytesToSave)
 {
     BOOL bRet = TRUE;
-    BYTE trampolineJmp[5] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
-    PDETOUR_CALL_INFO pDetourInfo = NULL;
-    DWORD originalPageRights;
 
     do
     {
-
-        pDetourInfo = (PDETOUR_CALL_INFO)((PBYTE)trampolineCall + DETOUR_CALL_INFO_OFFSET);
+        PDETOUR_CALL_INFO pDetourInfo = (PDETOUR_CALL_INFO)Add2Ptr(trampolineCall, DETOUR_CALL_INFO_OFFSET);
 
         __try
         {
+            DWORD originalPageRights = 0;
+            BYTE trampolineJmp[5] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
+
             // Setup trampoline jmp
-            *(DWORD*)(trampolineJmp + 1) = (DWORD)((BYTE*)originalCall - ((BYTE*)trampolineCall + 5));
+            DWORD jmpOffset = PtrOffset(Add2Ptr(trampolineCall, 5), originalCall);
+            *((DWORD*)Add2Ptr(trampolineJmp, 1)) = jmpOffset;
 
             // Backup fierst several bytes which is covered by our JMP instructions
             // And double check, make sure the bytes to copied is correct
@@ -282,7 +315,7 @@ static BOOL buildTrampolineCallFromOriginal(PVOID originalCall, PVOID trampoline
 
             // Copy trampoline jmp
             // After the bytes from original call, there is a JMP back to original call (skip backed up bytes)
-            memcpy((BYTE*)(trampolineCall) + bytesToSave, trampolineJmp, sizeof(trampolineJmp));
+            memcpy(Add2Ptr(trampolineCall, bytesToSave), trampolineJmp, sizeof(trampolineJmp));
 
             // Fill out detour info
             pDetourInfo->originalCallAddress = originalCall;
